@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Yazd architectural palette — every neutral is warm-tinted.
+   No pure #FFFFFF / #000000 anywhere.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-canvas: #faf6f0; /* Warm Alabaster / Khesht Light */
+  --color-sand: #f2eae0; /* Warm Sand / Raw Almond */
+  --color-card: #fffdf9; /* Elevated card surface */
+  --color-heritage: #1a1412; /* Roasted Espresso & Dark Adobe */
+  --color-heritage-ink: #f5efe6;
+  --color-ink: #1c1613; /* Deep Espresso */
+  --color-umber: #5e5249; /* Warm Umber */
+  --color-saffron: #d48c29; /* Saffron Gold */
+  --color-terracotta: #b85d3b; /* Yazd Terracotta / Khesht */
+  --color-pistachio: #5c7a45; /* Pistachio Green */
+  --color-firuzeh: #1d6a73; /* Yazd Turquoise */
+  --color-lajevard: #27466b; /* Lapis (ornament strokes only) */
+  --color-body: #2b221e; /* Persian body copy on high-DPI screens */
+  --color-terracotta-deep: #9a4a2c; /* terracotta for small text (AA contrast) */
+
+  --font-sans: "Vazirmatn FD", "Vazirmatn", sans-serif;
+
+  /* Ambient elevation only — never muddy drop shadows. */
+  --shadow-ambient: 0 1px 2px rgb(28 22 19 / 0.04), 0 14px 34px -22px rgb(28 22 19 / 0.22);
+  --shadow-lift: 0 1px 2px rgb(28 22 19 / 0.05), 0 22px 44px -26px rgb(28 22 19 / 0.32);
+  --shadow-glow: 0 0 0 1px rgb(212 140 41 / 0.25), 0 18px 40px -24px rgb(212 140 41 / 0.55);
+
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+    max-width: 100%;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background-color: rgb(212 140 41 / 0.24);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-saffron);
+    outline-offset: 3px;
+    border-radius: 12px;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Persian body copy — tuned for legibility on high-DPI phones */
+@utility copy-fa {
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: var(--color-body);
+  @media (width >= 40rem) {
+    font-size: 1.05rem;
+    line-height: 1.9;
+  }
+}
+
+@utility text-balance-fa {
+  text-wrap: balance;
+}
+
+@utility text-pretty-fa {
+  text-wrap: pretty;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Ambient loops run as CSS keyframes on transform/opacity only,
+   so they live on the compositor thread and stay perfectly smooth
+   even while React / framer-motion are busy on the main thread.
+   ────────────────────────────────────────────────────────────── */
+
+/* gentle vertical float (spice badges, showcase tag) — set --float-d / --float-dur inline */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, calc(var(--float-d, 8px) * -1), 0);
+  }
+}
+.float-y {
+  animation: float-y var(--float-dur, 5.5s) cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: var(--float-delay, 0s);
+  will-change: transform;
+}
+
+/* drifting spice particles: rise (outer) · sway (middle) · fade (inner) */
+@keyframes spice-rise {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, -14%, 0);
+  }
+}
+@keyframes spice-sway {
+  from {
+    transform: translate3d(calc(var(--sway, 16px) * -1), 0, 0) rotate(calc(var(--spin, 0deg) * -1));
+  }
+  to {
+    transform: translate3d(var(--sway, 16px), 0, 0) rotate(var(--spin, 0deg));
+  }
+}
+@keyframes spice-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  14%,
+  82% {
+    opacity: var(--o, 0.6);
+  }
+}
+.spice-rise {
+  animation: spice-rise var(--dur, 40s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+.spice-sway {
+  animation: spice-sway var(--sway-dur, 6s) cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+  will-change: transform;
+}
+.spice-fade {
+  animation: spice-fade var(--dur, 40s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* slow girih rosette turn behind the hero arch */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-slow {
+  animation: spin-slow 80s linear infinite;
+  will-change: transform;
+}
+
+/* off-screen ambient layers stop animating entirely (zero compositor cost) */
+[data-paused] .spice-rise,
+[data-paused] .spice-sway,
+[data-paused] .spice-fade,
+[data-paused] .motif-float {
+  animation-play-state: paused;
+}
+
+/* micro-diamonds in the wide-screen margins */
+@keyframes motif-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) rotate(45deg);
+    opacity: 0.8;
+  }
+  100% {
+    /* 4-fold star: 90° is visually identical to 0°, so the loop is seamless */
+    transform: translate3d(0, 0, 0) rotate(90deg);
+    opacity: 0.35;
+  }
+}
+.motif-float {
+  animation: motif-float var(--dur, 8s) cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* saffron shimmer wave across the filled sweetness segments */
+@keyframes gauge-shimmer {
+  0% {
+    transform: translate3d(110%, 0, 0);
+  }
+  30%,
+  100% {
+    transform: translate3d(-170%, 0, 0);
+  }
+}
+.gauge-shimmer {
+  animation: gauge-shimmer 3.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: var(--delay, 1s);
+  transform: translate3d(110%, 0, 0);
+}
+
+/* slow, soft golden light sweep (heritage link button) — travels right → left */
+@keyframes sheen-sweep {
+  0% {
+    transform: translate3d(120%, 0, 0);
+  }
+  56%,
+  100% {
+    transform: translate3d(-245%, 0, 0);
+  }
+}
+.sheen-sweep {
+  animation: sheen-sweep 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 1s;
+  transform: translate3d(120%, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .float-y,
+  .spice-rise,
+  .spice-sway,
+  .spice-fade,
+  .motif-float,
+  .gauge-shimmer,
+  .sheen-sweep,
+  .spin-slow {
+    animation: none !important;
+  }
+}

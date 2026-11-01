@@ -1,0 +1,7 @@
+npm install
+npm run dev
+
+
+npm run export سایت را در پوشه out می‌سازد
+npm run preview:static آن را روی http://localhost:4173 نشان می‌دهد
+npm run dev/build/start مثل قبل کار می‌کنند
