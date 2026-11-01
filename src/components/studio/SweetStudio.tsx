@@ -93,7 +93,7 @@ export function SweetStudio() {
       aria-labelledby="studio-title"
       onPointerDownCapture={onPointerDownCapture}
       onClickCapture={onClickCapture}
-      className="relative isolate mx-auto max-w-[1320px] scroll-mt-14 px-4 pt-4 pb-10 md:scroll-mt-24 md:px-8 md:pt-8 md:pb-12"
+      className="relative isolate mx-auto max-w-[1320px] scroll-mt-14 px-4 pt-10 pb-10 md:scroll-mt-24 md:px-8 md:pt-14 md:pb-12"
     >
       <DesertSaffronAmbient motifs={false} className="-inset-x-24" />
       <GirihPatternCanvas className="-z-10" />

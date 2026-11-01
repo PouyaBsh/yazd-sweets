@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useInView, type PanInfo } from "framer-motion";
+import { AnimatePresence, motion, useAnimationFrame, useInView, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import { ChevronLeft, ChevronRight, Hand, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { AdaptiveImage } from "@/components/AdaptiveImage";
@@ -30,8 +30,8 @@ const POSES: Record<"wide" | "compact", Pose[]> = {
   ],
 };
 
+/** One step of the auto-shuffle: the golden ring fills over exactly this long. */
 const AUTO_MS = 3800;
-const HOLD_MS = 8000;
 const FLY_MS = 280;
 
 const pad = (n: number) => toFa(String(n).padStart(2, "0"));
@@ -39,7 +39,8 @@ const pad = (n: number) => toFa(String(n).padStart(2, "0"));
 /**
  * Autonomous + touch-swipeable 3D stacked photo deck.
  *  • every 3.8s the front card arcs out in 3D and the next springs forward (golden ring = timer)
- *  • touch / drag / any control holds the shuffler for 8s
+ *  • the timer only pauses while a finger / mouse button is down or a card is being dragged;
+ *    any manual pick restarts a full step (no long "hold" that could leave it looking stuck)
  *  • fling the front card sideways, tap a background card, or use the 48px controls
  *  • the front card levitates (figure-8) and tilts toward cursor or finger
  */
@@ -48,29 +49,38 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
   const poses = POSES[compact ? "compact" : "wide"];
   const [order, setOrder] = useState<number[]>(() => images.map((_, i) => i));
   const [flying, setFlying] = useState<{ index: number; dir: number } | null>(null);
-  const [held, setHeld] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const [manualPause, setManualPause] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const holdTimer = useRef<number | undefined>(undefined);
   const flyTimer = useRef<number | undefined>(undefined);
   const rootRef = useRef<HTMLDivElement>(null);
   const inView = useInView(rootRef, { amount: 0.4 });
   const front = order[0];
-  const running = inView && !held && !manualPause && !dragging;
+  const running = inView && !pressed && !manualPause && !dragging;
+  const progress = useMotionValue(0);
+  const elapsed = useRef(0);
+  const lastFront = useRef(front);
 
-  const hold = useCallback(() => {
-    setHeld(true);
-    window.clearTimeout(holdTimer.current);
-    holdTimer.current = window.setTimeout(() => setHeld(false), HOLD_MS);
-  }, []);
+  const ringOpacity = useTransform(progress, (v) => (v > 0.004 ? 1 : 0));
 
-  useEffect(
-    () => () => {
-      window.clearTimeout(holdTimer.current);
-      window.clearTimeout(flyTimer.current);
-    },
-    [],
-  );
+  const restart = useCallback(() => {
+    elapsed.current = 0;
+    progress.set(0);
+  }, [progress]);
+
+  useEffect(() => () => window.clearTimeout(flyTimer.current), []);
+
+  // released anywhere (or the browser takes the touch over for scrolling) → resume at once
+  useEffect(() => {
+    if (!pressed) return;
+    const release = () => setPressed(false);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [pressed]);
 
   /** Arc the front card out, then send it to the back. */
   const advance = useCallback(
@@ -86,25 +96,40 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
     [flying, order],
   );
 
-  const previous = () => setOrder((prev) => [prev[prev.length - 1], ...prev.slice(0, -1)]);
-  const bringToFront = (i: number) => setOrder((prev) => [i, ...prev.filter((x) => x !== i)]);
+  const previous = () => {
+    restart();
+    setOrder((prev) => [prev[prev.length - 1], ...prev.slice(0, -1)]);
+  };
+  const bringToFront = (i: number) => {
+    restart();
+    setOrder((prev) => [i, ...prev.filter((x) => x !== i)]);
+  };
 
-  useEffect(() => {
+  // Frame clock (same engine as the hero story bars and the studio tour): time only accumulates
+  // while running, the ring is drawn from the same value, and reaching AUTO_MS always advances.
+  useAnimationFrame((_, delta) => {
+    if (lastFront.current !== front) {
+      lastFront.current = front; // any change of the front card starts a fresh, full step
+      restart();
+    }
     if (!running || flying) return;
-    const t = window.setTimeout(() => advance(-1), AUTO_MS);
-    return () => window.clearTimeout(t);
-  }, [running, flying, advance]);
+    elapsed.current += Math.min(delta, 64);
+    progress.set(Math.min(1, elapsed.current / AUTO_MS));
+    if (elapsed.current >= AUTO_MS) {
+      restart();
+      advance(-1);
+    }
+  });
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     setDragging(false);
-    hold();
+    restart();
     if (Math.abs(info.offset.x) > 80 || Math.abs(info.velocity.x) > 600) advance(info.offset.x >= 0 ? 1 : -1);
   }
 
   function handleCardKey(event: KeyboardEvent<HTMLDivElement>, i: number) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      hold();
       bringToFront(i);
     }
   }
@@ -117,7 +142,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
   });
 
   return (
-    <div ref={rootRef} className="relative" onPointerDownCapture={hold}>
+    <div ref={rootRef} className="relative" onPointerDownCapture={() => setPressed(true)}>
       <div className="relative mx-auto aspect-[4/5] w-[88%] sm:w-full sm:max-w-[400px]">
         {images.map((img, i) => {
           const depth = order.indexOf(i);
@@ -230,8 +255,8 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
             <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
               <circle cx={24} cy={24} r={21} fill="none" stroke="rgba(245,239,230,0.18)" strokeWidth={2.5} />
               <motion.circle
-                key={`${front}-${running}-${flying ? 1 : 0}`}
                 data-deck-ring
+                data-running={running ? "" : undefined}
                 cx={24}
                 cy={24}
                 r={21}
@@ -239,9 +264,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
                 stroke="#D48C29"
                 strokeWidth={2.5}
                 strokeLinecap="round"
-                initial={{ pathLength: running && !flying ? 0 : 1 }}
-                animate={{ pathLength: 1 }}
-                transition={running && !flying ? { duration: AUTO_MS / 1000, ease: "linear" } : SPRING}
+                style={{ pathLength: progress, opacity: ringOpacity }}
               />
             </svg>
             {manualPause ? <Play className="relative h-4 w-4" /> : <Pause className="relative h-4 w-4" />}
@@ -262,7 +285,10 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
           </motion.button>
           <motion.button
             type="button"
-            onClick={() => advance(-1)}
+            onClick={() => {
+              restart();
+              advance(-1);
+            }}
             initial="rest"
             animate="rest"
             whileHover="hover"

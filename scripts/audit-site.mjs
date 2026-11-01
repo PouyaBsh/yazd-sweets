@@ -393,7 +393,7 @@ async function auditViewport(browser, vp) {
   for (let i = 0; i < SWEET_IDS.length; i++) {
     if (i > 0) {
       await clickCentered(page.getByRole("button", { name: "شیرینی بعدی" }));
-      await settle(page, 1000);
+      await settle(page, 1600);
     } else {
       await centerOn(page, "[data-stage-height]");
     }
@@ -401,7 +401,7 @@ async function auditViewport(browser, vp) {
     heights.push(
       await page.evaluate(() => ({
         stage: Math.round(document.querySelector("[data-stage-height]").getBoundingClientRect().height),
-        doc: document.documentElement.scrollHeight,
+        content: Math.round(document.querySelector("[data-stage-content]")?.getBoundingClientRect().height ?? 0),
       })),
     );
     overflowLog.push({ step: `sweet:${id}`, ...(await overflow(page)) });
@@ -410,7 +410,8 @@ async function auditViewport(browser, vp) {
   }
   await overlays(page, true);
   await contactSheet(browser, stageShots, shot("05-sweet-studio-all-6-sweets"), 3);
-  const zeroShift = heights.every((h) => h.stage === heights[0].stage && h.doc === heights[0].doc);
+  // the stage hugs the card that is showing (no empty band reserved for the longest sweet)
+  const zeroShift = heights.every((h) => h.content > 0 && Math.abs(h.stage - h.content) <= 3);
 
   /* 06 bento grid */
   await clickCentered(page.getByRole("radio", { name: "نمای شبکه‌ای" }).last());
@@ -493,7 +494,7 @@ async function auditViewport(browser, vp) {
     storyDeck !== "fail";
   record("B-auto-cycle-and-swipe", bPass, {
     showcase: sB,
-    allSixSweets: { heights, zeroLayoutShift: zeroShift },
+    allSixSweets: { heights, stageFitsCard: zeroShift },
     bentoModalOpened: modalOpen === 1,
     coffeeDeck: { autoStart, autoNextAfter4700ms: autoNext, afterSwipe: afterDeckSwipe, afterNextButton: afterDeckNext, thumbCycle: deckShots.map((d) => d.front) },
     mobileStoryDeck: storyDeck,

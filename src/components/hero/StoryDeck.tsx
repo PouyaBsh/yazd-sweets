@@ -360,7 +360,7 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
   return (
     <div ref={rootRef} className="md:hidden">
       <ScrollReactiveCard>
-        <LachakiCardFrame arch={`${toFaPad(index + 1)}/۰۴`} className="mt-4">
+        <LachakiCardFrame arch={`${toFaPad(index + 1)}/۰۴`} className="mt-9">
           <div className="relative grid overflow-hidden rounded-[1.75rem] bg-card shadow-ambient">
             {/* height sizer: tallest slide reserves the space */}
             <div aria-hidden inert className="invisible col-start-1 row-start-1 grid">
@@ -454,7 +454,7 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
           whileTap={{ scale: 0.9 }}
           transition={SPRING}
           aria-label="روایت بعدی"
-          className="grid h-12 w-12 place-items-center rounded-full bg-ink text-canvas"
+          className="grid h-12 w-12 place-items-center rounded-full border border-ink/10 bg-card text-ink"
         >
           <ChevronLeft className="h-5 w-5" />
         </motion.button>

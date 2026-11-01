@@ -110,7 +110,9 @@ function Skyline({ progress, className }: { progress: MotionValue<number>; class
  */
 export function BadgirSectionDivider({ className }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center 60%"] });
+  // completes only when the frieze has travelled up to ~30% from the top of the screen
+  // (was 60%: it finished almost as soon as it appeared)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center 30%"] });
   const raw = useSpring(scrollYProgress, { stiffness: 160, damping: 32 });
   // ribbons start partly unrolled so the frieze is never an empty gap
   const progress = useTransform(raw, (v) => 0.18 + v * 0.82);

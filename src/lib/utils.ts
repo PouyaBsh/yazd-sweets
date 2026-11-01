@@ -97,14 +97,25 @@ export function scrollToSection(id: string) {
   if (typeof window === "undefined") return;
   const el = document.getElementById(id);
   if (!el) return;
-
-  activeScroll?.stop();
-
-  const target = () => {
+  glideTo(() => {
     const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
     const max = document.documentElement.scrollHeight - window.innerHeight;
     return Math.max(0, Math.min(max, el.getBoundingClientRect().top + window.scrollY - margin));
-  };
+  });
+}
+
+/**
+ * Back to the very top (scrollY = 0). Native `scrollTo({ behavior: "smooth" })` gets cut short
+ * on this page — layout/scroll-linked animations interrupt it mid-way — so it uses the same
+ * re-measuring glide as scrollToSection.
+ */
+export function scrollToTop() {
+  if (typeof window === "undefined") return;
+  glideTo(() => 0);
+}
+
+function glideTo(target: () => number) {
+  activeScroll?.stop();
 
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     window.scrollTo({ top: target(), behavior: "instant" });
@@ -113,7 +124,7 @@ export function scrollToSection(id: string) {
 
   const startY = window.scrollY;
   const startT = performance.now();
-  const duration = Math.min(1100, Math.max(520, 420 + Math.abs(target() - startY) * 0.22));
+  const duration = Math.min(1400, Math.max(520, 420 + Math.abs(target() - startY) * 0.22));
   const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); // easeInOutCubic
 
   const onUserInput = () => stop();

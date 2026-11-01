@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { KashikariRibbon } from "@/components/ornaments";
 import { KhatamStar } from "@/components/ui/Ornaments";
 import { SPRING } from "@/lib/motion";
-import { scrollToSection } from "@/lib/utils";
+import { scrollToSection, scrollToTop } from "@/lib/utils";
 
 const NAV_ITEMS: { id: string; label: string; short: string; icon: LucideIcon }[] = [
   { id: "story", label: "روایت تاریخی", short: "روایت", icon: BookOpen },
@@ -67,7 +67,7 @@ export function SiteHeader() {
           href="#top"
           onClick={(e) => {
             e.preventDefault();
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            scrollToTop();
           }}
           whileHover={{ rotate: -8, scale: 1.04 }}
           whileTap={{ scale: 0.94 }}

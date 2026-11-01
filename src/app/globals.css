@@ -228,19 +228,19 @@
   transform: translate3d(110%, 0, 0);
 }
 
-/* slow, soft golden light sweep (heritage link button) — travels right → left */
+/* soft golden light sweep (heritage link button) — travels right → left, once every 3 s */
 @keyframes sheen-sweep {
   0% {
     transform: translate3d(120%, 0, 0);
   }
-  56%,
+  60%,
   100% {
     transform: translate3d(-245%, 0, 0);
   }
 }
 .sheen-sweep {
-  animation: sheen-sweep 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  animation-delay: 1s;
+  animation: sheen-sweep 3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 0.6s;
   transform: translate3d(120%, 0, 0);
 }
 
