@@ -23,7 +23,7 @@ const SPICES: Spice[] = [
     label: "هل سبز",
     color: "#5C7A45",
     icon: Leaf,
-    position: "top-[9%] -right-[min(calc((100vw_-_100%)/2_-_18px),32px)] sm:-right-3",
+    position: "top-[9%] -right-[min(calc((100vw_-_100%)/2_-_28px),22px)] sm:-right-0.5",
     floatDuration: 5.2,
     floatDistance: 9,
   },

@@ -314,14 +314,62 @@ function SlideBody({ p, i }: { p: Paragraph; i: number }) {
 /* ─────────────────────────── mobile: auto-advancing swipeable story deck ─────────────────────────── */
 
 const AUTO_MS = 6500;
-const PAUSE_MS = 8000;
 const toFaPad = (n: number) => `۰${"۰۱۲۳۴۵۶۷۸۹"[n]}`;
+
+/**
+ * The terracotta bar under the active dot is also the timer: a compositor scaleX animation whose
+ * finish advances the deck. Changing cycleKey always starts a fresh, empty bar, so a manual flip
+ * begins a full step on the new card instead of leaving the old bar sitting full.
+ */
+function StoryTimerBar({ cycleKey, running, onDone }: { cycleKey: string; running: boolean; onDone: () => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const anim = useRef<Animation | null>(null);
+  const onDoneRef = useRef(onDone);
+  const runningRef = useRef(running);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+    runningRef.current = running;
+  });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const a = el.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: AUTO_MS, easing: "linear", fill: "forwards" });
+    a.onfinish = () => onDoneRef.current();
+    anim.current = a;
+    if (!runningRef.current) a.pause();
+    return () => {
+      a.onfinish = null;
+      a.cancel();
+    };
+  }, [cycleKey]);
+
+  useEffect(() => {
+    const a = anim.current;
+    if (!a || a.playState === "finished") return;
+    if (running) a.play();
+    else a.pause();
+  }, [running, cycleKey]);
+
+  return (
+    <span
+      ref={ref}
+      data-story-timer
+      data-running={running ? "" : undefined}
+      className="absolute inset-0 origin-right rounded-full bg-terracotta"
+      style={{ transform: "scaleX(0)" }}
+    />
+  );
+}
 
 function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
-  const [paused, setPaused] = useState(false);
-  const pauseTimer = useRef<number | undefined>(undefined);
+  const [pressed, setPressed] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  // bumped by every manual flip → the timer bar restarts from zero
+  const [cycle, setCycle] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const inView = useInView(rootRef, { amount: 0.45 });
   const n = paragraphs.length;
@@ -334,28 +382,36 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
     [n],
   );
 
-  const pause = useCallback(() => {
-    setPaused(true);
-    window.clearTimeout(pauseTimer.current);
-    pauseTimer.current = window.setTimeout(() => setPaused(false), PAUSE_MS);
-  }, []);
+  /** manual flip: move and start a full, fresh step on the new card */
+  const flip = useCallback(
+    (delta: number) => {
+      setCycle((c) => c + 1);
+      go(delta);
+    },
+    [go],
+  );
 
-  useEffect(() => () => window.clearTimeout(pauseTimer.current), []);
-
+  // the timer only holds while a finger is actually down — released (or the browser takes the
+  // touch over for scrolling) → it carries on at once
   useEffect(() => {
-    if (!inView || paused) return;
-    const t = window.setTimeout(() => go(1), AUTO_MS);
-    return () => window.clearTimeout(t);
-  }, [index, inView, paused, go]);
+    if (!pressed) return;
+    const release = () => setPressed(false);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [pressed]);
 
   function handleDragEnd(_: unknown, info: PanInfo) {
-    pause();
+    setDragging(false);
     // RTL: the next story lives to the left, so a rightward swipe reveals it
-    if (info.offset.x > 60 || info.velocity.x > 500) go(1);
-    else if (info.offset.x < -60 || info.velocity.x < -500) go(-1);
+    if (info.offset.x > 60 || info.velocity.x > 500) flip(1);
+    else if (info.offset.x < -60 || info.velocity.x < -500) flip(-1);
   }
 
-  const autoplaying = inView && !paused;
+  const running = inView && !pressed && !dragging;
 
   return (
     <div ref={rootRef} className="md:hidden">
@@ -375,9 +431,9 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.45}
-              onDragStart={pause}
+              onDragStart={() => setDragging(true)}
               onDragEnd={handleDragEnd}
-              onPointerDown={pause}
+              onPointerDown={() => setPressed(true)}
             >
               <AnimatePresence mode="popLayout" initial={false} custom={dir}>
                 <motion.div
@@ -405,10 +461,7 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
       <div className="mt-3 flex items-center justify-between">
         <motion.button
           type="button"
-          onClick={() => {
-            pause();
-            go(-1);
-          }}
+          onClick={() => flip(-1)}
           whileTap={{ scale: 0.9 }}
           transition={SPRING}
           aria-label="روایت قبلی"
@@ -425,32 +478,21 @@ function MobileStoryDeck({ paragraphs }: { paragraphs: Paragraph[] }) {
               aria-selected={i === index}
               aria-label={p.label}
               onClick={() => {
-                pause();
+                setCycle((c) => c + 1);
                 setDir(i > index ? 1 : -1);
                 setIndex(i);
               }}
               className="grid h-12 w-12 place-items-center"
             >
               <span className={cn("relative block h-1.5 overflow-hidden rounded-full bg-ink/15", i === index ? "w-8" : "w-3")}>
-                {i === index && (
-                  <motion.span
-                    key={`${index}-${autoplaying}`}
-                    className="absolute inset-0 origin-right rounded-full bg-terracotta"
-                    initial={{ scaleX: autoplaying ? 0 : 1 }}
-                    animate={{ scaleX: 1 }}
-                    transition={autoplaying ? { duration: AUTO_MS / 1000, ease: "linear" } : SPRING}
-                  />
-                )}
+                {i === index && <StoryTimerBar cycleKey={`${index}-${cycle}`} running={running} onDone={() => go(1)} />}
               </span>
             </button>
           ))}
         </div>
         <motion.button
           type="button"
-          onClick={() => {
-            pause();
-            go(1);
-          }}
+          onClick={() => flip(1)}
           whileTap={{ scale: 0.9 }}
           transition={SPRING}
           aria-label="روایت بعدی"

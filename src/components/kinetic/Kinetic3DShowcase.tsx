@@ -195,44 +195,46 @@ export function Kinetic3DShowcase({
       onPointerCancel={release}
       onPointerLeave={release}
     >
-      <motion.div
-        aria-hidden
-        className={cn("pointer-events-none absolute inset-0", rounded)}
-        style={{ opacity: restShadowOpacity, boxShadow: "0 18px 44px -26px rgba(28, 22, 19, 0.3)" }}
-      />
-      <motion.div
-        aria-hidden
-        className={cn("pointer-events-none absolute inset-0", rounded)}
-        style={{ opacity: press, boxShadow: "0 28px 62px -26px rgba(28, 22, 19, 0.44)" }}
-      />
       {/* orbit layers (compositor): translateY → rotateX+scale → rotateY → pointer tilt (framer) */}
       <div ref={tyRef} className="h-full w-full [transform-style:preserve-3d]">
         <div ref={rxRef} data-kinetic={kineticId} className="h-full w-full [transform-style:preserve-3d]">
           <div ref={ryRef} className="h-full w-full [transform-style:preserve-3d]">
-            <motion.div
-              style={{ rotateX: tiltX, rotateY: tiltY, scale: tiltScale, transformStyle: "preserve-3d" }}
-              className={cn("relative h-full w-full overflow-hidden", rounded)}
-            >
-              {children}
+            <motion.div style={{ rotateX: tiltX, rotateY: tiltY, scale: tiltScale }} className="relative h-full w-full">
+              {/* the elevation shadows ride on the same moving surface as the photo — on a still box
+                  behind it they showed as a separate plate with a hard edge whenever the photo lifted
+                  or turned away from that box */}
               <motion.div
                 aria-hidden
-                className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden mix-blend-screen", rounded)}
-                style={{ opacity: sheenOpacity }}
-              >
-                <div
-                  ref={sheenRef}
-                  className="absolute inset-y-0 left-0 w-[260%]"
-                  style={{
-                    transform: "translateX(-30.75%)",
-                    background: "linear-gradient(115deg, transparent 30%, rgba(255,248,231,0.32) 50%, transparent 70%)",
-                  }}
-                />
-              </motion.div>
-              <motion.div
-                aria-hidden
-                className={cn("pointer-events-none absolute inset-0 z-10 mix-blend-soft-light", rounded)}
-                style={{ backgroundImage: glare, opacity: glareOpacity }}
+                className={cn("pointer-events-none absolute inset-0", rounded)}
+                style={{ opacity: restShadowOpacity, boxShadow: "0 18px 44px -26px rgba(28, 22, 19, 0.3)" }}
               />
+              <motion.div
+                aria-hidden
+                className={cn("pointer-events-none absolute inset-0", rounded)}
+                style={{ opacity: press, boxShadow: "0 28px 62px -26px rgba(28, 22, 19, 0.44)" }}
+              />
+              <div className={cn("relative h-full w-full overflow-hidden", rounded)}>
+                {children}
+                <motion.div
+                  aria-hidden
+                  className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden mix-blend-screen", rounded)}
+                  style={{ opacity: sheenOpacity }}
+                >
+                  <div
+                    ref={sheenRef}
+                    className="absolute inset-y-0 left-0 w-[260%]"
+                    style={{
+                      transform: "translateX(-30.75%)",
+                      background: "linear-gradient(115deg, transparent 30%, rgba(255,248,231,0.32) 50%, transparent 70%)",
+                    }}
+                  />
+                </motion.div>
+                <motion.div
+                  aria-hidden
+                  className={cn("pointer-events-none absolute inset-0 z-10 mix-blend-soft-light", rounded)}
+                  style={{ backgroundImage: glare, opacity: glareOpacity }}
+                />
+              </div>
             </motion.div>
           </div>
         </div>
