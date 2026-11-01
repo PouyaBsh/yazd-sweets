@@ -32,7 +32,9 @@ export function GirihPatternCanvas({ tone = "light", className, vignette = true,
   // seamless parallax (pattern repeats every T px) + a little extra depth shift while scrolling fast
   const y = useTransform([scrollY, velocity], ([s, v]: number[]) => -((s * parallax) % T) + Math.max(-18, Math.min(18, v * 0.008)));
 
-  const mask = vignette ? "radial-gradient(circle at center, black 40%, transparent 95%)" : undefined;
+  // an ellipse sized to the box (closest-side) reaches full transparency on every edge — the old
+  // circle only did so at the corners, so the lattice ended in a faint straight seam top / bottom
+  const mask = vignette ? "radial-gradient(closest-side at center, black 45%, transparent 100%)" : undefined;
   const sw = 0.75;
 
   return (

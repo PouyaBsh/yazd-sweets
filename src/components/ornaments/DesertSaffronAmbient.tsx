@@ -18,22 +18,43 @@ interface DesertSaffronAmbientProps {
   tone?: "light" | "dark";
   /** Floating micro-diamonds in the wide-screen margins. */
   motifs?: boolean;
+  /**
+   * Fade the light pools out before the box edges, so a pool that is cut by the box never shows a
+   * straight seam: "all" = every side (a section in the middle of the page), "bottom" = only the
+   * bottom (the hero, whose other edges are the page / viewport edges anyway).
+   */
+  edgeFade?: "all" | "bottom";
 }
 
 /** soft round light pool: solid core fading out like a blurred disc */
 const glow = (rgb: string, a: number) =>
   `radial-gradient(closest-side, rgba(${rgb},${a}) 0%, rgba(${rgb},${a}) 42%, rgba(${rgb},${(a * 0.45).toFixed(3)}) 66%, rgba(${rgb},0) 100%)`;
 
+/* two nested single-layer masks (one per axis) instead of one mask with mask-composite,
+   which still differs between the prefixed and the standard syntax */
+const FADE_X = "linear-gradient(to right, transparent, #000 9rem, #000 calc(100% - 9rem), transparent)";
+const FADE_Y = "linear-gradient(to bottom, transparent, #000 7rem, #000 calc(100% - 7rem), transparent)";
+const FADE_BOTTOM = "linear-gradient(to bottom, #000 calc(100% - 10rem), transparent)";
+
+const maskStyle = (mask?: string): CSSProperties | undefined => (mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined);
+
 /** Warm desert light pools + floating micro-geometric diamonds in the page margins. */
-export function DesertSaffronAmbient({ className, tone = "light", motifs = true }: DesertSaffronAmbientProps) {
+export function DesertSaffronAmbient({ className, tone = "light", motifs = true, edgeFade }: DesertSaffronAmbientProps) {
   const dark = tone === "dark";
   return (
-    <div aria-hidden data-ornament="ambient" className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}>
+    <div
+      aria-hidden
+      data-ornament="ambient"
+      className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}
+      style={maskStyle(edgeFade === "all" ? FADE_X : undefined)}
+    >
       {/* warm light pools — radial gradients instead of blur(64px) filters: same soft look,
           but no huge filtered layers for a phone GPU to re-rasterise */}
-      <div className="absolute -top-56 right-[calc(6%-4rem)] h-[36rem] w-[36rem]" style={{ background: glow("212,140,41", dark ? 0.1 : 0.11) }} />
-      <div className="absolute top-[calc(38%-4rem)] -left-48 h-[32rem] w-[32rem]" style={{ background: glow("184,93,59", dark ? 0.14 : 0.07) }} />
-      <div className="absolute -bottom-48 right-[calc(30%-4rem)] h-[28rem] w-[28rem]" style={{ background: glow("29,106,115", dark ? 0.12 : 0.04) }} />
+      <div className="absolute inset-0" style={maskStyle(edgeFade === "all" ? FADE_Y : edgeFade === "bottom" ? FADE_BOTTOM : undefined)}>
+        <div className="absolute -top-56 right-[calc(6%-4rem)] h-[36rem] w-[36rem]" style={{ background: glow("212,140,41", dark ? 0.1 : 0.11) }} />
+        <div className="absolute top-[calc(38%-4rem)] -left-48 h-[32rem] w-[32rem]" style={{ background: glow("184,93,59", dark ? 0.14 : 0.07) }} />
+        <div className="absolute -bottom-48 right-[calc(30%-4rem)] h-[28rem] w-[28rem]" style={{ background: glow("29,106,115", dark ? 0.12 : 0.04) }} />
+      </div>
       {motifs &&
         MARGIN_MOTIFS.map((m, i) => (
           <svg

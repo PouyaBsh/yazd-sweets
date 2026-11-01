@@ -19,7 +19,7 @@ export function HeroSection() {
           ))}
         </div>
       </div>
-      <DesertSaffronAmbient />
+      <DesertSaffronAmbient edgeFade="bottom" />
       <AmbientSpiceParticles className="-z-10 h-[56rem]" count={16} seed={11} />
       <HeroIntro />
       <StoryDeck />

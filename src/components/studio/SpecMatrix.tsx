@@ -89,11 +89,13 @@ interface SpecMatrixProps {
   ghost?: boolean;
   /** "wide" → 2×2 on mobile, 4 columns on xl · "narrow" → 2×2 / 3 columns (detail modal). */
   layout?: "wide" | "narrow";
+  /** Skip the cell / pill stagger (phones: the whole card already dissolves in as one piece). */
+  calm?: boolean;
   className?: string;
 }
 
 /** «ویژگی‌های این شیرینی» — living 4-part metadata grid (compact 2×2 on phones). */
-export function SpecMatrix({ sweet, ghost, layout = "wide", className }: SpecMatrixProps) {
+export function SpecMatrix({ sweet, ghost, calm, layout = "wide", className }: SpecMatrixProps) {
   const { specs, accentColor } = sweet;
   const ingredients = splitIngredients(specs.mainIngredients);
 
@@ -106,7 +108,7 @@ export function SpecMatrix({ sweet, ghost, layout = "wide", className }: SpecMat
 
       <motion.div
         variants={ghost ? undefined : cascade}
-        initial={ghost ? false : "hidden"}
+        initial={ghost || calm ? false : "hidden"}
         animate="show"
         className={cn("grid grid-cols-2 gap-2.5 sm:gap-3", layout === "wide" ? "xl:grid-cols-4" : "sm:grid-cols-3")}
       >

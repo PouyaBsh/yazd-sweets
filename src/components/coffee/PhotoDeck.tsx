@@ -17,7 +17,11 @@ interface DeckImage {
 
 type Pose = { x: number; y: number; rotate: number; scale: number };
 
-/** Resting pose for each depth in the stack (0 = front). Phones keep rotation within ±3°. */
+/**
+ * Resting pose for each depth in the stack (0 = front). Phones keep rotation within ±3°, so
+ * the deck reads as three cards through a wider fan instead: the front card is smaller there
+ * and each back card shows a clear strip on its own side.
+ */
 const POSES: Record<"wide" | "compact", Pose[]> = {
   wide: [
     { x: 0, y: 0, rotate: 0, scale: 1 },
@@ -26,8 +30,8 @@ const POSES: Record<"wide" | "compact", Pose[]> = {
   ],
   compact: [
     { x: 0, y: 0, rotate: 0, scale: 1 },
-    { x: -18, y: 14, rotate: -3, scale: 0.93 },
-    { x: 18, y: 26, rotate: 3, scale: 0.87 },
+    { x: -54, y: 10, rotate: -3, scale: 0.9 },
+    { x: 54, y: 20, rotate: 3, scale: 0.84 },
   ],
 };
 
@@ -114,7 +118,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
   }
 
   const flyPose = (dir: number): Pose => ({
-    x: dir * (compact ? 150 : 230),
+    x: dir * (compact ? 130 : 230),
     y: -26,
     rotate: dir * (compact ? 3 : 16),
     scale: 0.94,
@@ -122,7 +126,8 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
 
   return (
     <div ref={rootRef} className="relative" onPointerDownCapture={() => setPressed(true)}>
-      <div className="relative mx-auto aspect-[4/5] w-[88%] sm:w-full sm:max-w-[400px]">
+      {/* phones: ~64% of the column (≤ 240px) so the two back cards fan out visibly on both sides */}
+      <div className="relative mx-auto aspect-[4/5] w-[min(64%,240px)] md:w-full md:max-w-[400px]">
         {images.map((img, i) => {
           const depth = order.indexOf(i);
           const isFront = depth === 0;
@@ -164,7 +169,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-[#1A1412]"
                   initial={false}
-                  animate={{ opacity: isFront ? 0 : 0.5 }}
+                  animate={{ opacity: isFront ? 0 : compact ? 0.38 : 0.5 }}
                   transition={SPRING}
                 />
                 <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-[#F5EFE6]/15 ring-inset" />
@@ -175,7 +180,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
       </div>
 
       {/* caption */}
-      <div className="mt-9 min-h-[3.25rem] text-center md:mt-12">
+      <div className="mt-7 min-h-[3.25rem] text-center md:mt-12">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
             key={front}

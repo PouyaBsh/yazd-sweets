@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type PanInfo, type Variants } from "framer-motion";
+import { motion, useIsPresent, type PanInfo, type Transition, type Variants } from "framer-motion";
 import type { CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { AdaptiveImage } from "@/components/AdaptiveImage";
@@ -8,7 +8,7 @@ import { useExperience, type Direction } from "@/components/experience/Experienc
 import { Kinetic3DShowcase } from "@/components/kinetic/Kinetic3DShowcase";
 import { ShamsehMedallion } from "@/components/ornaments";
 import { SWEETS_DATA, type SweetItem } from "@/data/yazd-content";
-import { SPRING } from "@/lib/motion";
+import { SPRING, SPRING_DRIFT } from "@/lib/motion";
 import { cn, hexToRgba, toFa } from "@/lib/utils";
 import { SpecMatrix } from "./SpecMatrix";
 
@@ -20,6 +20,14 @@ const cardVariants: Variants = {
   center: { opacity: 1, x: 0, rotateY: 0, scale: 1, transition: SPRING },
   exit: (d: Direction) => ({ opacity: 0, x: d * 64, rotateY: d * 24, scale: 0.98, transition: SPRING }),
 };
+
+/**
+ * Phones: hero-slider style dissolve. The new sweet fades in on an over-damped spring (no
+ * overshoot, no blink) with a faint 1.02 → 1 drift, while the old one fades out a little
+ * faster underneath — opacity + transform only, so the compositor runs it.
+ */
+const CONTENT_DISSOLVE: Transition = { type: "spring", stiffness: 80, damping: 21, restDelta: 0.0005 };
+const CONTENT_OUT: Transition = { duration: 0.32, ease: [0.4, 0, 0.2, 1] };
 
 const SWIPE_DISTANCE = 70;
 
@@ -96,7 +104,7 @@ function ImageStage({ sweet }: { sweet: SweetItem }) {
   );
 }
 
-function ShowcaseBody({ sweet, ghost }: { sweet: SweetItem; ghost?: boolean }) {
+function ShowcaseBody({ sweet, ghost, calm }: { sweet: SweetItem; ghost?: boolean; calm?: boolean }) {
   const total = toFa(String(SWEETS_DATA.length).padStart(2, "0"));
   return (
     <>
@@ -122,12 +130,24 @@ function ShowcaseBody({ sweet, ghost }: { sweet: SweetItem; ghost?: boolean }) {
         </div>
       </div>
 
-      <SpecMatrix sweet={sweet} ghost={ghost} className="mt-5 md:mt-8" />
+      <SpecMatrix sweet={sweet} ghost={ghost} calm={calm} className="mt-5 md:mt-8" />
     </>
   );
 }
 
 /** Dynamic showcase card for the selected sweet — directional 3D slide/flip via AnimatePresence. */
+function AccentGlow({ color }: { color: string }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -top-48 -left-48 h-[26rem] w-[26rem]"
+      style={{
+        background: `radial-gradient(closest-side, ${hexToRgba(color, 0.14)} 0%, ${hexToRgba(color, 0.14)} 40%, ${hexToRgba(color, 0.06)} 65%, transparent 100%)`,
+      }}
+    />
+  );
+}
+
 export function ShowcaseCard({ sweet, direction }: { sweet: SweetItem; direction: Direction }) {
   return (
     <motion.article
@@ -141,17 +161,38 @@ export function ShowcaseCard({ sweet, direction }: { sweet: SweetItem; direction
       exit="exit"
       className={cn(CARD_CLASSES, "h-full [transform-style:preserve-3d]")}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-48 -left-48 h-[26rem] w-[26rem]"
-        style={{
-          background: `radial-gradient(closest-side, ${hexToRgba(sweet.accentColor, 0.14)} 0%, ${hexToRgba(sweet.accentColor, 0.14)} 40%, ${hexToRgba(sweet.accentColor, 0.06)} 65%, transparent 100%)`,
-        }}
-      />
+      <AccentGlow color={sweet.accentColor} />
       <div className="relative">
         <ShowcaseBody sweet={sweet} />
       </div>
     </motion.article>
+  );
+}
+
+/** Phone card shell: stays put while only its content dissolves (see StudioStage). */
+export const SHELL_CLASSES = "relative min-w-0 overflow-hidden rounded-[2rem] bg-card shadow-ambient";
+
+/**
+ * Phones: one sweet's content inside the persistent card shell. The outgoing copy is lifted
+ * out of the flow (absolute, top-aligned) so the shell can glide straight to the new height
+ * while both layers cross-fade on top of each other.
+ */
+export function ShowcaseDissolve({ sweet }: { sweet: SweetItem }) {
+  const isPresent = useIsPresent();
+  return (
+    <motion.div
+      data-dissolve-layer={sweet.id}
+      className={cn("p-4 sm:p-5", isPresent ? "relative" : "pointer-events-none absolute inset-x-0 top-0")}
+      style={{ transformOrigin: "50% 0%" }}
+      initial={{ opacity: 0, transform: "scale(1.02)" }}
+      animate={{ opacity: 1, transform: "scale(1)", transition: { opacity: CONTENT_DISSOLVE, transform: SPRING_DRIFT } }}
+      exit={{ opacity: 0, transition: CONTENT_OUT }}
+    >
+      <AccentGlow color={sweet.accentColor} />
+      <div className="relative">
+        <ShowcaseBody sweet={sweet} calm />
+      </div>
+    </motion.div>
   );
 }
 
