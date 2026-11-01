@@ -20,7 +20,7 @@
   --color-body: #2b221e; /* Persian body copy on high-DPI screens */
   --color-terracotta-deep: #9a4a2c; /* terracotta for small text (AA contrast) */
 
-  --font-sans: "Vazirmatn FD", "Vazirmatn", sans-serif;
+  --font-sans: var(--font-vazirmatn), "Vazirmatn FD", "Vazirmatn", Tahoma, sans-serif;
 
   /* Ambient elevation only — never muddy drop shadows. */
   --shadow-ambient: 0 1px 2px rgb(28 22 19 / 0.04), 0 14px 34px -22px rgb(28 22 19 / 0.22);
@@ -131,47 +131,6 @@
   will-change: transform;
 }
 
-/* drifting spice particles: rise (outer) · sway (middle) · fade (inner) */
-@keyframes spice-rise {
-  from {
-    transform: translate3d(0, 100%, 0);
-  }
-  to {
-    transform: translate3d(0, -14%, 0);
-  }
-}
-@keyframes spice-sway {
-  from {
-    transform: translate3d(calc(var(--sway, 16px) * -1), 0, 0) rotate(calc(var(--spin, 0deg) * -1));
-  }
-  to {
-    transform: translate3d(var(--sway, 16px), 0, 0) rotate(var(--spin, 0deg));
-  }
-}
-@keyframes spice-fade {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  14%,
-  82% {
-    opacity: var(--o, 0.6);
-  }
-}
-.spice-rise {
-  animation: spice-rise var(--dur, 40s) linear infinite;
-  animation-delay: var(--delay, 0s);
-  will-change: transform;
-}
-.spice-sway {
-  animation: spice-sway var(--sway-dur, 6s) cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-  will-change: transform;
-}
-.spice-fade {
-  animation: spice-fade var(--dur, 40s) linear infinite;
-  animation-delay: var(--delay, 0s);
-}
-
 /* slow girih rosette turn behind the hero arch */
 @keyframes spin-slow {
   to {
@@ -183,12 +142,60 @@
   will-change: transform;
 }
 
-/* off-screen ambient layers stop animating entirely (zero compositor cost) */
-[data-paused] .spice-rise,
-[data-paused] .spice-sway,
-[data-paused] .spice-fade,
-[data-paused] .motif-float {
-  animation-play-state: paused;
+/* small perpetual cues — compositor-only (transform), replacing framer "repeat: Infinity" loops */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes nudge-x {
+  0%,
+  53.3%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  26.7% {
+    transform: translate3d(-5px, 0, 0);
+  }
+}
+.nudge-x {
+  animation: nudge-x 3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes hint-x {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(7px, 0, 0);
+  }
+}
+.hint-x {
+  animation: hint-x 1.3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* phones: sections far off-screen skip style / layout / paint entirely (rendered again just before
+   they scroll in). Nothing is removed — the browser simply stops working on what nobody can see.
+   Phones only: on wide screens a few ornaments deliberately overhang their section. */
+@media (max-width: 767px) {
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 1400px;
+  }
+}
+
+/* sections scrolled out of view pause all their CSS loops (see AnimationScopes.tsx) */
+[data-anim-offscreen] *,
+[data-anim-offscreen] *::before,
+[data-anim-offscreen] *::after {
+  animation-play-state: paused !important;
 }
 
 /* micro-diamonds in the wide-screen margins */
@@ -249,13 +256,13 @@
     scroll-behavior: auto;
   }
   .float-y,
-  .spice-rise,
-  .spice-sway,
-  .spice-fade,
   .motif-float,
   .gauge-shimmer,
   .sheen-sweep,
-  .spin-slow {
+  .spin-slow,
+  .pulse-dot,
+  .nudge-x,
+  .hint-x {
     animation: none !important;
   }
 }

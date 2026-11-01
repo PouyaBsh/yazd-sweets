@@ -59,7 +59,7 @@ function TelegramLink() {
   );
 }
 
-/** «ساخته شده با عشق» + a heart drawn in one pen stroke (it draws itself in once, like ink from a pen). */
+/** «ساخته شده با عشق» + a heart drawn in one pen stroke (it draws itself in — again each time it comes back into view — like ink from a pen). */
 function MadeWithLove() {
   return (
     <p className="inline-flex items-center gap-2 text-[13px] font-semibold text-umber" data-made-with-love>
@@ -71,7 +71,7 @@ function MadeWithLove() {
         aria-hidden
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 1 }}
+        viewport={{ once: false, amount: 1 }}
       >
         <motion.path
           d="M20.4 32.6C14.2 27.4 4.8 21.2 3.3 13.4C2.2 7.4 6.4 3.1 11.3 3.5C15.5 3.9 18.5 7.3 20 11C21.7 6.6 25.3 3.1 30.1 3.3C35.5 3.6 38.3 8.7 36.7 14.3C34.7 21.3 27 26.9 19.8 33.4C19 34.1 17.7 33.1 18.7 32.2"
@@ -80,7 +80,7 @@ function MadeWithLove() {
           strokeLinecap="round"
           strokeLinejoin="round"
           variants={{
-            hidden: { pathLength: 0, opacity: 0 },
+            hidden: { pathLength: 0, opacity: 0, transition: { duration: 0 } },
             show: {
               pathLength: 1,
               opacity: 1,
@@ -94,7 +94,7 @@ function MadeWithLove() {
           cy={32.2}
           r={1.1}
           fill="#B85D3B"
-          variants={{ hidden: { scale: 0, opacity: 0 }, show: { scale: 1, opacity: 0.8, transition: { ...SPRING, delay: 1.5 } } }}
+          variants={{ hidden: { scale: 0, opacity: 0, transition: { duration: 0 } }, show: { scale: 1, opacity: 0.8, transition: { ...SPRING, delay: 1.5 } } }}
         />
       </motion.svg>
     </p>
@@ -103,7 +103,7 @@ function MadeWithLove() {
 
 export function SiteFooter() {
   return (
-    <footer className="mx-auto max-w-[1320px] px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-8 md:pb-10">
+    <footer data-anim-scope className="cv-auto mx-auto max-w-[1320px] px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-8 md:pb-10">
       <div className="relative">
         <YazdSkylinePanorama className="mx-auto h-auto max-h-40 w-full md:max-h-44" />
         <KashikariRibbon className="opacity-80" />

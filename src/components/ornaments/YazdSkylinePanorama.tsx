@@ -142,19 +142,20 @@ const FILL_ADOBE = [
 ].join("");
 
 const DRAW: Transition = { type: "spring", stiffness: 22, damping: 14, restDelta: 0.0005 };
+// leaving the screen resets instantly (no spring running off-screen); coming back draws again
 const draw: Variants = {
-  hidden: { pathLength: 0, opacity: 0 },
+  hidden: { pathLength: 0, opacity: 0, transition: { duration: 0 } },
   show: (i: number) => ({ pathLength: 1, opacity: 1, transition: { pathLength: { ...DRAW, delay: i * 0.035 }, opacity: { duration: 0.2, delay: i * 0.035 } } }),
 };
 const fade: Variants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 0, transition: { duration: 0 } },
   show: { opacity: 1, transition: { type: "spring", stiffness: 30, damping: 18, delay: 0.6 } },
 };
 
 /**
  * Footer panorama of Yazd: windcatchers (Dowlat-Abad, Yazdi badgirs), the Jameh-mosque portal with
  * its twin minarets, a tiled dome against a low desert sun, the Amir-Chakhmaq tiered facade,
- * domed-roof houses, a palm and a cypress. Line work draws itself in once when it scrolls into view.
+ * domed-roof houses, a palm and a cypress. Line work draws itself in every time it scrolls into view.
  */
 export function YazdSkylinePanorama({ className }: { className?: string }) {
   return (
@@ -167,7 +168,7 @@ export function YazdSkylinePanorama({ className }: { className?: string }) {
       data-ornament="skyline"
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.35 }}
+      viewport={{ once: false, amount: 0.35 }}
     >
       {/* desert sun sinking behind the dome */}
       <motion.g variants={fade}>

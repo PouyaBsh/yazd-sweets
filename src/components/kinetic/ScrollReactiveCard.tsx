@@ -33,6 +33,8 @@ export function ScrollReactiveCard({ children, className, forceActive, lift = 4,
   const ref = useRef<HTMLDivElement>(null);
   const canHover = useCanHover();
   const inCenter = useInView(ref, { margin: "-20% 0px -20% 0px" });
+  // only cards near the screen follow the scroll drift — far ones stay static (no style writes)
+  const near = useInView(ref, { margin: "35% 0px 35% 0px" });
   const [hovered, setHovered] = useState(false);
   const active = forceActive ?? (canHover ? hovered : inCenter);
 
@@ -52,7 +54,7 @@ export function ScrollReactiveCard({ children, className, forceActive, lift = 4,
         data-reactive={active ? "active" : "idle"}
         onHoverStart={() => setHovered(true)}
         onHoverEnd={() => setHovered(false)}
-        style={{ ...style, y }}
+        style={{ ...style, y: near ? y : 0 }}
         className={cn("relative", className)}
         {...rest}
       >

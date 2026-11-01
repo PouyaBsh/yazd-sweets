@@ -6,6 +6,7 @@ import { useCanHover } from "@/components/kinetic/hooks";
 import { ShamsehMedallion } from "@/components/ornaments";
 import { HERO_CONTENT } from "@/data/yazd-content";
 import { fadeUp, SPRING, staggerParent } from "@/lib/motion";
+import { useRevealed } from "@/lib/reveal";
 import { cn, scrollToSection } from "@/lib/utils";
 import { KineticTitle } from "./KineticTitle";
 import { HeroArch } from "./HeroArch";
@@ -22,16 +23,19 @@ const STAT_TYPE = "text-xl leading-snug font-black text-ink sm:text-2xl sm:white
 
 export function HeroIntro() {
   const canHover = useCanHover();
+  // the entrance plays when the boot loader opens the page, not hidden behind it
+  const revealed = useRevealed();
 
   return (
     <div
       id="hero"
+      data-anim-scope
       className="relative mx-auto grid max-w-[1320px] items-center gap-10 px-4 pt-24 pb-6 md:px-8 md:pt-36 lg:grid-cols-12 lg:gap-10 lg:pb-14"
     >
       {/* Shamseh halo behind the title */}
       <ShamsehMedallion className="absolute top-10 -right-24 -z-10 h-[26rem] w-[26rem] opacity-[0.22] md:top-16 md:-right-16 md:h-[34rem] md:w-[34rem] lg:right-[18%]" />
 
-      <motion.div className="relative lg:col-span-7" variants={staggerParent(0.09, 0.1)} initial="hidden" animate="show">
+      <motion.div className="relative lg:col-span-7" variants={staggerParent(0.09, 0.1)} initial="hidden" animate={revealed ? "show" : "hidden"}>
         <motion.span
           variants={fadeUp}
           className="inline-flex items-center gap-2.5 rounded-full border border-ink/10 bg-card/80 py-1.5 ps-2.5 pe-4 text-[13px] font-semibold text-umber"
@@ -65,11 +69,13 @@ export function HeroIntro() {
             {/* desktop: nudges on hover · touch: nudges on its own so the CTA still feels alive */}
             <motion.span
               variants={{ rest: { x: 0 }, hover: { x: -4 } }}
-              animate={canHover ? undefined : { x: [0, -5, 0] }}
-              transition={canHover ? SPRING : { duration: 1.6, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" }}
+              transition={SPRING}
               className="grid h-9 w-9 place-items-center rounded-full bg-canvas/15"
             >
-              <ArrowLeft className="h-4 w-4" />
+              {/* touch: a compositor CSS loop (no per-frame JavaScript) */}
+              <span className={canHover ? "grid place-items-center" : "nudge-x grid place-items-center"}>
+                <ArrowLeft className="h-4 w-4" />
+              </span>
             </motion.span>
           </motion.button>
           <motion.button

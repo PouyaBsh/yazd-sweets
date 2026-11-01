@@ -30,7 +30,7 @@ function BentoCard({ sweet, wide, selected, onOpen }: { sweet: SweetItem; wide: 
         className={cn("group relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] bg-card text-start shadow-ambient", wide && "lg:flex-row")}
       >
         <div className={cn("relative h-48 w-full shrink-0 overflow-hidden sm:h-56 lg:h-auto lg:min-h-0 lg:flex-1", wide && "lg:w-[56%] lg:flex-none")}>
-          <AdaptiveImage src={sweet.image} alt={sweet.imageAlt} aspectRatio="h-full" hoverZoom="parent" sizes="(max-width: 1024px) 50vw, 33vw" />
+          <AdaptiveImage src={sweet.image} alt={sweet.imageAlt} aspectRatio="h-full" hoverZoom="parent" sizes="(max-width: 640px) 256px, (max-width: 1024px) 50vw, 33vw" />
           <span className="absolute top-3 right-3 rounded-full bg-canvas/95 px-2.5 py-0.5 text-xs font-black text-ink">{sweet.order}</span>
         </div>
 

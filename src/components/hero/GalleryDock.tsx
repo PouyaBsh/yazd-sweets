@@ -3,11 +3,14 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Award, Hand, Images, MousePointerClick } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { AdaptiveImage } from "@/components/AdaptiveImage";
 import { useExperience } from "@/components/experience/ExperienceContext";
 import { useCanHover } from "@/components/kinetic/hooks";
 import { SWEETS_DATA, YAZDI_COFFEE_DATA } from "@/data/yazd-content";
 import { fadeUp, SPRING, SPRING_FADE_OUT, staggerParent, SPRING_GLIDE } from "@/lib/motion";
+import { prefersReducedMotion, settle, springEasing } from "@/lib/compositor";
+import { useRevealed } from "@/lib/reveal";
 import { scrollToSection } from "@/lib/utils";
 
 interface DockItem {
@@ -47,6 +50,36 @@ const DOCK_ITEMS: DockItem[] = [
 const WAVE_MS = 1500;
 
 /**
+ * The golden wave's 4px lift as a Web Animation on transform (compositor thread) — the wave
+ * keeps travelling across the cards without waking the main thread every frame.
+ */
+function WaveLift({ on, children }: { on: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const first = useRef(true);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotion()) return;
+    if (first.current && !on) {
+      first.current = false;
+      return;
+    }
+    first.current = false;
+    const from = getComputedStyle(el).transform;
+    el.getAnimations().forEach((a) => a.cancel());
+    const e = on ? springEasing(120, 22) : springEasing(110, 20);
+    settle(
+      el.animate([{ transform: from === "none" ? "translateY(0px)" : from }, { transform: on ? "translateY(-4px)" : "translateY(0px)" }], {
+        duration: e.duration,
+        easing: e.easing,
+        delay: on ? 0 : 60,
+        fill: "forwards",
+      }),
+    );
+  }, [on]);
+  return <div ref={ref}>{children}</div>;
+}
+
+/**
  * Quick-jump gallery dock.
  *  Desktop: hover widens a thumbnail (spring flex-grow) and reveals its subtitle.
  *  Touch:   snap-to-centre carousel — the centred card scales up, reveals its subtitle and
@@ -66,6 +99,10 @@ export function GalleryDock() {
   const nudging = useRef(false);
   const nudged = useRef(false);
   const inView = useInView(listRef, { amount: 0.6 });
+  // entrance: once the strip is on screen AND the boot loader has opened the page
+  const dockSeen = useInView(listRef, { once: true, amount: 0.3 });
+  const revealed = useRevealed();
+  const dockShown = dockSeen && revealed;
 
   // golden wave pulse until first interaction
   useEffect(() => {
@@ -141,7 +178,7 @@ export function GalleryDock() {
   }
 
   return (
-    <section aria-labelledby="dock-title" className="mx-auto max-w-[1320px] px-4 pb-4 md:px-8 md:pb-8">
+    <section data-anim-scope aria-labelledby="dock-title" className="mx-auto max-w-[1320px] px-4 pb-4 md:px-8 md:pb-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 id="dock-title" className="flex items-center gap-2.5 text-base font-extrabold text-ink">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-sand text-terracotta-deep">
@@ -163,9 +200,9 @@ export function GalleryDock() {
               transition={SPRING}
               className="flex items-center gap-1.5 rounded-full border border-saffron/40 bg-card px-3 py-1 text-xs font-bold text-ink md:hidden"
             >
-              <motion.span animate={{ x: [0, 7, 0] }} transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}>
+              <span className="hint-x inline-flex">
                 <Hand className="h-3.5 w-3.5 text-terracotta-deep" />
-              </motion.span>
+              </span>
               بکشید
             </motion.p>
           )}
@@ -177,8 +214,7 @@ export function GalleryDock() {
         className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-3 pb-3 scrollbar-none [mask-image:linear-gradient(to_left,transparent,black_6%,black_94%,transparent)] md:mx-0 md:snap-none md:px-0 md:[mask-image:none]"
         variants={staggerParent(0.05)}
         initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
+        animate={dockShown ? "show" : "hidden"}
         onMouseLeave={() => setHovered(null)}
         onPointerDown={() => setInteracted(true)}
       >
@@ -199,6 +235,7 @@ export function GalleryDock() {
               transition={SPRING}
             >
               <motion.div variants={fadeUp}>
+                <WaveLift on={waving && !lit}>
                 {/* the lift/scale lives on this wrapper so the gold ring (a sibling of the clipped button) moves with the card */}
                 <motion.div
                   className="relative"
@@ -206,7 +243,7 @@ export function GalleryDock() {
                   animate={lit ? "hover" : waving ? "wave" : "rest"}
                   variants={{
                     rest: { scale: 1, y: 0, transition: SPRING_FADE_OUT },
-                    wave: { scale: 1, y: -4, transition: SPRING_GLIDE },
+                    wave: { scale: 1, y: 0, transition: SPRING_GLIDE }, // the wave's lift runs in <WaveLift> (compositor)
                     hover: { scale: canHover ? 1 : 1.05, y: -2, transition: SPRING },
                   }}
                   transition={SPRING}
@@ -242,7 +279,7 @@ export function GalleryDock() {
                       aspectRatio="h-full"
                       hoverZoom="parent"
                       eager
-                      sizes="(max-width: 768px) 45vw, 18vw"
+                      sizes="(max-width: 640px) 256px, 18vw"
                     />
                     <div
                       aria-hidden
@@ -290,6 +327,7 @@ export function GalleryDock() {
                     </div>
                   </motion.button>
                 </motion.div>
+                </WaveLift>
               </motion.div>
             </motion.li>
           );

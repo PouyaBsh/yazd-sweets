@@ -260,7 +260,7 @@ function AmbassadorChips() {
           aria-label={`نمایش ${sweet.name} در استودیو`}
         >
           <span className="h-9 w-9 overflow-hidden rounded-full">
-            <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-square" hoverZoom="parent" sizes="36px" />
+            <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-square" hoverZoom="parent" sizes="42px" />
           </span>
           <span className="text-sm font-bold text-ink">{sweet.name}</span>
           <motion.span variants={{ rest: { opacity: 0.4, x: 0 }, hover: { opacity: 1, x: -2 } }} transition={SPRING} className="text-terracotta-deep">
@@ -293,7 +293,7 @@ function SlideBody({ p, i }: { p: Paragraph; i: number }) {
               <div aria-hidden className="mt-auto grid grid-cols-3 items-end gap-2.5 pt-4">
                 {ARCH_TRIO.map((sweet, k) => (
                   <div key={sweet.id} className={cn("overflow-hidden rounded-t-[50%_40%] rounded-b-xl border border-ink/10 bg-sand", k === 1 ? "mb-3" : "")}>
-                    <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-[4/5]" hoverZoom="none" sizes="120px" />
+                    <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-[4/5]" hoverZoom="none" sizes="256px" />
                   </div>
                 ))}
               </div>
@@ -469,7 +469,7 @@ export function StoryDeck() {
   const [p1, p2, p3, p4] = HERO_CONTENT.paragraphs;
 
   return (
-    <section id="story" aria-labelledby="story-title" className="relative mx-auto max-w-[1320px] scroll-mt-20 px-4 py-8 md:scroll-mt-28 md:px-8 md:py-14">
+    <section id="story" data-anim-scope aria-labelledby="story-title" className="cv-auto relative mx-auto max-w-[1320px] scroll-mt-20 px-4 py-8 md:scroll-mt-28 md:px-8 md:py-14">
       {/* Shamseh behind the historical deck */}
       <ShamsehMedallion className="absolute top-24 -left-40 -z-10 hidden h-[30rem] w-[30rem] opacity-[0.16] md:block" period={110} />
 
@@ -511,7 +511,7 @@ export function StoryDeck() {
                 transition={SPRING}
                 className={cn("overflow-hidden rounded-t-[50%_40%] rounded-b-2xl border border-ink/10 bg-sand", i === 1 ? "mb-5" : "")}
               >
-                <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-[5/4]" hoverZoom="self" sizes="220px" />
+                <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-[5/4]" hoverZoom="self" sizes="256px" />
               </motion.div>
             ))}
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup, MotionConfig } from "framer-motion";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SWEETS_DATA } from "@/data/yazd-content";
 import { SPRING } from "@/lib/motion";
 import { scrollToSection } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { HeroSection } from "@/components/hero/HeroSection";
 import { SweetStudio } from "@/components/studio/SweetStudio";
 import { CoffeeSection } from "@/components/coffee/CoffeeSection";
 import { BadgirSectionDivider } from "@/components/ornaments";
+import { AnimationScopes } from "@/components/kinetic/AnimationScopes";
 
 const indexOf = (id: string) => SWEETS_DATA.findIndex((s) => s.id === id);
 
@@ -22,6 +23,12 @@ const indexOf = (id: string) => SWEETS_DATA.findIndex((s) => s.id === id);
 export function YazdExperience() {
   const [selection, setSelection] = useState<{ id: string; direction: Direction }>({ id: SWEETS_DATA[0].id, direction: 1 });
   const [viewMode, setViewMode] = useState<ViewMode>("studio");
+
+  // tell the boot loader that React has hydrated (it waits for this before opening the page)
+  useEffect(() => {
+    (window as Window & { __yazdHydrated?: boolean }).__yazdHydrated = true;
+    window.dispatchEvent(new Event("yazd:hydrated"));
+  }, []);
 
   const selectSweet = useCallback((id: string, direction?: Direction) => {
     setSelection((prev) => {
@@ -64,6 +71,7 @@ export function YazdExperience() {
     <MotionConfig reducedMotion="user" transition={SPRING}>
       <ExperienceContext.Provider value={value}>
         <LayoutGroup>
+          <AnimationScopes />
           <SiteHeader />
           <main id="top" className="relative min-h-[100dvh] overflow-x-clip">
             <HeroSection />

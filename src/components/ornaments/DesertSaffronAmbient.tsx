@@ -20,14 +20,20 @@ interface DesertSaffronAmbientProps {
   motifs?: boolean;
 }
 
+/** soft round light pool: solid core fading out like a blurred disc */
+const glow = (rgb: string, a: number) =>
+  `radial-gradient(closest-side, rgba(${rgb},${a}) 0%, rgba(${rgb},${a}) 42%, rgba(${rgb},${(a * 0.45).toFixed(3)}) 66%, rgba(${rgb},0) 100%)`;
+
 /** Warm desert light pools + floating micro-geometric diamonds in the page margins. */
 export function DesertSaffronAmbient({ className, tone = "light", motifs = true }: DesertSaffronAmbientProps) {
   const dark = tone === "dark";
   return (
     <div aria-hidden data-ornament="ambient" className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}>
-      <div className={cn("absolute -top-40 right-[6%] h-[28rem] w-[28rem] rounded-full blur-3xl", dark ? "bg-saffron/[0.10]" : "bg-saffron/[0.11]")} />
-      <div className={cn("absolute top-[38%] -left-32 h-[24rem] w-[24rem] rounded-full blur-3xl", dark ? "bg-terracotta/[0.14]" : "bg-terracotta/[0.07]")} />
-      <div className={cn("absolute -bottom-32 right-[30%] h-[20rem] w-[20rem] rounded-full blur-3xl", dark ? "bg-firuzeh/[0.12]" : "bg-firuzeh/[0.04]")} />
+      {/* warm light pools — radial gradients instead of blur(64px) filters: same soft look,
+          but no huge filtered layers for a phone GPU to re-rasterise */}
+      <div className="absolute -top-56 right-[calc(6%-4rem)] h-[36rem] w-[36rem]" style={{ background: glow("212,140,41", dark ? 0.1 : 0.11) }} />
+      <div className="absolute top-[calc(38%-4rem)] -left-48 h-[32rem] w-[32rem]" style={{ background: glow("184,93,59", dark ? 0.14 : 0.07) }} />
+      <div className="absolute -bottom-48 right-[calc(30%-4rem)] h-[28rem] w-[28rem]" style={{ background: glow("29,106,115", dark ? 0.12 : 0.04) }} />
       {motifs &&
         MARGIN_MOTIFS.map((m, i) => (
           <svg

@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useTransform } from "framer-motion";
-import { useId } from "react";
+import { motion, useInView, useTransform } from "framer-motion";
+import { useId, useRef } from "react";
 import { useScrollVelocity } from "@/components/kinetic/hooks";
 import { cn } from "@/lib/utils";
 import { ORNAMENT, starPoints } from "./geometry";
@@ -26,6 +26,8 @@ interface GirihPatternCanvasProps {
  */
 export function GirihPatternCanvas({ tone = "light", className, vignette = true, parallax = 0.06, opacity }: GirihPatternCanvasProps) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const near = useInView(rootRef, { margin: "25% 0px 25% 0px" });
   const { scrollY, velocity } = useScrollVelocity();
   // seamless parallax (pattern repeats every T px) + a little extra depth shift while scrolling fast
   const y = useTransform([scrollY, velocity], ([s, v]: number[]) => -((s * parallax) % T) + Math.max(-18, Math.min(18, v * 0.008)));
@@ -35,12 +37,13 @@ export function GirihPatternCanvas({ tone = "light", className, vignette = true,
 
   return (
     <div
+      ref={rootRef}
       aria-hidden
       data-ornament="girih"
       className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
       style={{ opacity: opacity ?? (tone === "dark" ? 0.09 : 0.065), maskImage: mask, WebkitMaskImage: mask }}
     >
-      <motion.svg style={{ y }} className="absolute inset-x-0 -top-28 h-[calc(100%+14rem)] w-full" xmlns="http://www.w3.org/2000/svg">
+      <motion.svg style={{ y: near ? y : 0 }} className="absolute inset-x-0 -top-28 h-[calc(100%+14rem)] w-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id={`girih-${id}`} width={T} height={T} patternUnits="userSpaceOnUse">
             {/* khatam: two interlaced squares (terracotta) */}

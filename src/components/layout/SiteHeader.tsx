@@ -61,7 +61,7 @@ export function SiteHeader() {
       <motion.nav
         aria-label="ناوبری اصلی"
         style={{ boxShadow: elevation }}
-        className="pointer-events-auto relative flex h-14 w-full items-center gap-1 border-b border-ink/10 bg-canvas/85 px-2 backdrop-blur-md sm:px-3 md:h-auto md:w-auto md:gap-0.5 md:rounded-full md:border md:p-1.5"
+        className="pointer-events-auto relative flex h-14 w-full items-center gap-1 border-b border-ink/10 bg-canvas/95 px-2 sm:px-3 md:bg-canvas/85 md:backdrop-blur-md md:h-auto md:w-auto md:gap-0.5 md:rounded-full md:border md:p-1.5"
       >
         <motion.a
           href="#top"

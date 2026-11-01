@@ -42,3 +42,6 @@ next-env.d.ts
 
 # audit output
 /.audit-screenshots/
+
+# generated responsive image variants (npm run export / dev / build create them)
+/public/images/v/

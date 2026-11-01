@@ -193,7 +193,8 @@ function probeImages() {
   const notCover = [];
   const deferred = [];
   for (const img of imgs) {
-    const file = decodeURIComponent(new URL(img.currentSrc || img.src).pathname.split("/").pop() || "");
+    // responsive variants (…/images/v/768/qottab.avif) count as the photo they were made from
+    const file = decodeURIComponent(new URL(img.currentSrc || img.src).pathname.split("/").pop() || "").replace(/\.avif$/, ".webp");
     const r = img.getBoundingClientRect();
     const offscreen = r.right < 0 || r.left > innerWidth || r.bottom < 0 || r.top > innerHeight;
     if (img.complete && img.naturalWidth > 0) files.add(file);

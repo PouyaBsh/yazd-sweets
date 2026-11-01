@@ -1,8 +1,9 @@
 "use client";
 
-import { motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion } from "framer-motion";
-import { useId, useRef, type ReactNode } from "react";
+import { useInView } from "framer-motion";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useScrollVelocity } from "@/components/kinetic/hooks";
+import { prefersReducedMotion } from "@/lib/compositor";
 import { cn } from "@/lib/utils";
 import { ORNAMENT, polygonPoints, ringPositions, starPoints } from "./geometry";
 
@@ -18,28 +19,54 @@ interface ShamsehMedallionProps {
 
 /**
  * Shamseh (شمسه) — 16-point outer star, 12-point inner rosette, counter-rotating rings,
- * a slow breathing scale (1 → 1.04 → 1). Paused off-screen and for prefers-reduced-motion.
- * Fast scrolling temporarily accelerates the spin.
+ * a slow breathing scale (1 → 1.04 → 1). The rotation and breathing are Web Animations on
+ * transform (compositor thread: no per-frame JavaScript); fast scrolling speeds the spin up by
+ * nudging playbackRate. Paused off-screen and for prefers-reduced-motion.
  */
 export function ShamsehMedallion({ className, tone = "light", period = 90, strokeWidth = 1.1 }: ShamsehMedallionProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const breathRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "120px" });
-  const reduced = useReducedMotion();
   const { boost } = useScrollVelocity();
-  const outer = useMotionValue(0);
-  const inner = useMotionValue(0);
-  const breath = useMotionValue(1);
-  const angle = useRef(0);
+  const anims = useRef<Animation[]>([]);
   const glowId = `shamseh-glow-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
-  useAnimationFrame((time, delta) => {
-    if (reduced || !inView) return;
-    const dt = Math.min(delta, 64);
-    angle.current += dt * (360 / (period * 1000)) * (1 + boost.get() * 9);
-    outer.set(angle.current);
-    inner.set(-angle.current * 1.25);
-    breath.set(1 + 0.02 * (1 - Math.cos((time / 9000) * Math.PI * 2)));
-  });
+  useEffect(() => {
+    if (prefersReducedMotion() || !outerRef.current || !innerRef.current || !breathRef.current) return;
+    const ms = period * 1000;
+    const list = [
+      outerRef.current.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: ms, iterations: Infinity }),
+      innerRef.current.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(-360deg)" }], { duration: ms / 1.25, iterations: Infinity }),
+      breathRef.current.animate([{ transform: "scale(1)" }, { transform: "scale(1.04)" }, { transform: "scale(1)" }], {
+        duration: 9000,
+        iterations: Infinity,
+        easing: "ease-in-out",
+      }),
+    ];
+    list.forEach((a) => a.pause());
+    anims.current = list;
+    return () => list.forEach((a) => a.cancel());
+  }, [period]);
+
+  useEffect(() => {
+    anims.current.forEach((a) => (inView ? a.play() : a.pause()));
+  }, [inView]);
+
+  // scroll boost: only touch the animations when the (quantised) speed actually changes
+  useEffect(() => {
+    let last = 1;
+    return boost.on("change", (b) => {
+      const rate = Math.round((1 + b * 9) * 2) / 2;
+      if (rate === last) return;
+      last = rate;
+      anims.current.slice(0, 2).forEach((a) => {
+        if (typeof a.updatePlaybackRate === "function") a.updatePlaybackRate(rate);
+        else a.playbackRate = rate;
+      });
+    });
+  }, [boost]);
 
   const gold = tone === "gold";
   const c1 = gold ? ORNAMENT.copper : ORNAMENT.terracotta;
@@ -71,9 +98,9 @@ export function ShamsehMedallion({ className, tone = "light", period = 90, strok
 
   return (
     <div ref={ref} aria-hidden data-ornament="shamseh" className={cn("pointer-events-none select-none", className)}>
-      <motion.div className="relative h-full w-full will-change-transform" style={{ scale: breath }}>
+      <div ref={breathRef} className="relative h-full w-full">
         {/* outer ring — clockwise */}
-        <motion.div data-spin="outer" className="absolute inset-0 will-change-transform" style={{ rotate: outer }}>
+        <div ref={outerRef} data-spin="outer" className="absolute inset-0">
           {layer(
             "o",
             <>
@@ -97,7 +124,7 @@ export function ShamsehMedallion({ className, tone = "light", period = 90, strok
               ))}
             </>,
           )}
-        </motion.div>
+        </div>
 
         {/* middle band — static */}
         {layer(
@@ -109,7 +136,7 @@ export function ShamsehMedallion({ className, tone = "light", period = 90, strok
         )}
 
         {/* inner rosette — counter-clockwise */}
-        <motion.div data-spin="inner" className="absolute inset-0 will-change-transform" style={{ rotate: inner }}>
+        <div ref={innerRef} data-spin="inner" className="absolute inset-0">
           {layer(
             "i",
             <>
@@ -133,8 +160,8 @@ export function ShamsehMedallion({ className, tone = "light", period = 90, strok
               <polygon points={starPoints(200, 200, 16, 8, 0.55)} fill={c3} stroke="none" opacity={0.8} />
             </>,
           )}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

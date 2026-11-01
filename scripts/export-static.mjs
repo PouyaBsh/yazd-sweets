@@ -33,6 +33,16 @@ if (!existsSync(nextBin)) {
 
 console.log(`\n▸ Static export  ·  base path: ${basePath || "/ (domain root)"}${domain ? `  ·  CNAME: ${domain}` : ""}\n`);
 
+// responsive image variants first (the custom image loader points at them)
+const variantsCode = await new Promise((resolve) => {
+  const child = spawn(process.execPath, [path.join(root, "scripts", "build-image-variants.mjs")], { cwd: root, stdio: "inherit" });
+  child.on("exit", (c) => resolve(c ?? 1));
+});
+if (variantsCode !== 0) {
+  console.error("✖ image variants failed");
+  process.exit(variantsCode);
+}
+
 const code = await new Promise((resolve) => {
   const child = spawn(process.execPath, [nextBin, "build"], {
     cwd: root,

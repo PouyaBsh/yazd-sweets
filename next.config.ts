@@ -14,8 +14,15 @@ const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim().replace(/\/+$/
 const nextConfig: NextConfig = {
   ...(isStaticExport ? { output: "export" as const } : {}),
   ...(basePath ? { basePath } : {}),
-  // every <Image> is already `unoptimized`; this keeps static export happy (no image server)
-  images: { unoptimized: true },
+  // responsive variants without an image server: a custom loader maps each srcset width to a
+  // pre-built file (scripts/build-image-variants.mjs). Only 3 widths → each photo is fetched at
+  // most twice on a phone and reused in every slot.
+  images: {
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
+    imageSizes: [128],
+    deviceSizes: [768, 1024],
+  },
   // Cache Components / partial prefetching need a Next server (PPR) — Next refuses them in
   // export mode, and a one-page static site gains nothing from them there.
   cacheComponents: !isStaticExport,

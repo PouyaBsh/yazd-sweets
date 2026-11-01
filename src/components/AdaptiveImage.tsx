@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, type MotionProps } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { HOVER_ZOOM, SPRING } from "@/lib/motion";
+import { webpImageLoader } from "@/lib/image-loader";
 import { assetPath, cn } from "@/lib/utils";
 import { KhatamStar } from "@/components/ui/Ornaments";
 
@@ -25,7 +26,8 @@ export interface AdaptiveImageProps {
   /** Tailwind object-position class, e.g. "object-center", "object-top". */
   objectPosition?: string;
   sizes?: string;
-  /** Load immediately (above-the-fold images). */
+  /** Above-the-fold photo: fetched with high priority (every photo is fetched up-front anyway so
+   *  the boot loader can wait for all of them and scrolling never shows a half-loaded image). */
   eager?: boolean;
   /**
    * "self"   → zooms when the image itself is hovered (default)
@@ -56,16 +58,22 @@ function AdaptiveImageFrame({
   className,
   imageClassName,
   objectPosition = "object-center",
-  sizes = "(max-width: 768px) 100vw, 50vw",
+  sizes = "(max-width: 640px) 256px, (max-width: 1024px) 50vw, 33vw",
   eager = false,
   hoverZoom = "self",
   rounded,
 }: AdaptiveImageProps) {
   const [status, setStatus] = useState<Status>("loading");
-  const [resolvedSrc, setResolvedSrc] = useState(() => assetPath(src));
+  const [resolvedSrc, setResolvedSrc] = useState(src);
+  // the loader serves AVIF variants; a browser that can't decode them retries with the WebP copies
+  const [webp, setWebp] = useState(false);
   const triedPlaceholder = useRef(false);
 
   const handleError = useCallback(() => {
+    if (!webp && src.startsWith("/images/")) {
+      setWebp(true);
+      return;
+    }
     if (triedPlaceholder.current) {
       setStatus("error");
       return;
@@ -84,7 +92,7 @@ function AdaptiveImageFrame({
         }
       })
       .catch(() => setStatus("error"));
-  }, [src]);
+  }, [src, webp]);
 
   const selfHover: MotionProps = hoverZoom === "self" ? { initial: "rest", animate: "rest", whileHover: "hover" } : {};
 
@@ -102,10 +110,10 @@ function AdaptiveImageFrame({
               src={resolvedSrc}
               alt={alt}
               fill
-              unoptimized
+              loader={webp ? webpImageLoader : undefined}
               sizes={sizes}
-              loading={eager ? "eager" : "lazy"}
-              fetchPriority={eager ? "high" : "auto"}
+              loading="eager"
+              fetchPriority={eager ? "high" : "low"}
               draggable={false}
               onLoad={() => setStatus("loaded")}
               onError={handleError}

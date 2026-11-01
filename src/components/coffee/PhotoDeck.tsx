@@ -1,11 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimationFrame, useInView, useMotionValue, useTransform, type PanInfo } from "framer-motion";
+import { AnimatePresence, motion, useInView, type PanInfo } from "framer-motion";
 import { ChevronLeft, ChevronRight, Hand, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { AdaptiveImage } from "@/components/AdaptiveImage";
 import { useMediaQuery } from "@/components/kinetic/hooks";
 import { Kinetic3DShowcase } from "@/components/kinetic/Kinetic3DShowcase";
+import { ProgressRing } from "@/components/ui/ProgressRing";
 import { SPRING } from "@/lib/motion";
 import { cn, toFa } from "@/lib/utils";
 
@@ -31,14 +32,15 @@ const POSES: Record<"wide" | "compact", Pose[]> = {
 };
 
 /** One step of the auto-shuffle: the golden ring fills over exactly this long. */
-const AUTO_MS = 3800;
+const AUTO_MS = 2800;
 const FLY_MS = 280;
 
 const pad = (n: number) => toFa(String(n).padStart(2, "0"));
 
 /**
  * Autonomous + touch-swipeable 3D stacked photo deck.
- *  • every 3.8s the front card arcs out in 3D and the next springs forward (golden ring = timer)
+ *  • every 2.8s the front card arcs out in 3D and the next springs forward (golden ring = timer,
+ *    a compositor animation — when it closes, the deck advances)
  *  • the timer only pauses while a finger / mouse button is down or a card is being dragged;
  *    any manual pick restarts a full step (no long "hold" that could leave it looking stuck)
  *  • fling the front card sideways, tap a background card, or use the 48px controls
@@ -57,16 +59,9 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
   const inView = useInView(rootRef, { amount: 0.4 });
   const front = order[0];
   const running = inView && !pressed && !manualPause && !dragging;
-  const progress = useMotionValue(0);
-  const elapsed = useRef(0);
-  const lastFront = useRef(front);
-
-  const ringOpacity = useTransform(progress, (v) => (v > 0.004 ? 1 : 0));
-
-  const restart = useCallback(() => {
-    elapsed.current = 0;
-    progress.set(0);
-  }, [progress]);
+  // bumping this starts a fresh, empty ring (manual picks restart the step)
+  const [cycle, setCycle] = useState(0);
+  const restart = useCallback(() => setCycle((c) => c + 1), []);
 
   useEffect(() => () => window.clearTimeout(flyTimer.current), []);
 
@@ -104,22 +99,6 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
     restart();
     setOrder((prev) => [i, ...prev.filter((x) => x !== i)]);
   };
-
-  // Frame clock (same engine as the hero story bars and the studio tour): time only accumulates
-  // while running, the ring is drawn from the same value, and reaching AUTO_MS always advances.
-  useAnimationFrame((_, delta) => {
-    if (lastFront.current !== front) {
-      lastFront.current = front; // any change of the front card starts a fresh, full step
-      restart();
-    }
-    if (!running || flying) return;
-    elapsed.current += Math.min(delta, 64);
-    progress.set(Math.min(1, elapsed.current / AUTO_MS));
-    if (elapsed.current >= AUTO_MS) {
-      restart();
-      advance(-1);
-    }
-  });
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     setDragging(false);
@@ -180,7 +159,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
                 className="h-full w-full"
                 rounded="rounded-[1.75rem]"
               >
-                <AdaptiveImage src={img.src} alt={img.alt} aspectRatio="h-full" hoverZoom="none" sizes="(max-width: 768px) 80vw, 400px" />
+                <AdaptiveImage src={img.src} alt={img.alt} aspectRatio="h-full" hoverZoom="none" sizes="(max-width: 640px) 256px, 400px" />
                 <motion.div
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-[#1A1412]"
@@ -235,7 +214,7 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
                 >
                   {active && <motion.span layoutId="coffee-thumb-ring" transition={SPRING} className="absolute -inset-1 rounded-[14px] border-2 border-saffron" />}
                   <span className="absolute inset-0 overflow-hidden rounded-xl">
-                    <AdaptiveImage src={image.src} alt="" aspectRatio="h-full" hoverZoom="self" sizes="48px" />
+                    <AdaptiveImage src={image.src} alt="" aspectRatio="h-full" hoverZoom="self" sizes="42px" />
                   </span>
                 </motion.button>
               );
@@ -252,21 +231,17 @@ export function PhotoDeck({ images }: { images: DeckImage[] }) {
             aria-pressed={manualPause}
             className="relative grid h-12 w-12 place-items-center rounded-full text-[#F5EFE6]"
           >
-            <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-              <circle cx={24} cy={24} r={21} fill="none" stroke="rgba(245,239,230,0.18)" strokeWidth={2.5} />
-              <motion.circle
-                data-deck-ring
-                data-running={running ? "" : undefined}
-                cx={24}
-                cy={24}
-                r={21}
-                fill="none"
-                stroke="#D48C29"
-                strokeWidth={2.5}
-                strokeLinecap="round"
-                style={{ pathLength: progress, opacity: ringOpacity }}
-              />
-            </svg>
+            <ProgressRing
+              size={48}
+              stroke={2.5}
+              color="#D48C29"
+              track="rgba(245,239,230,0.18)"
+              duration={AUTO_MS}
+              cycleKey={`${front}-${cycle}`}
+              running={running && !flying}
+              onDone={() => advance(-1)}
+              className="absolute inset-0"
+            />
             {manualPause ? <Play className="relative h-4 w-4" /> : <Pause className="relative h-4 w-4" />}
           </motion.button>
         </div>

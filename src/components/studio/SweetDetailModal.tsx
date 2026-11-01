@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { AdaptiveImage } from "@/components/AdaptiveImage";
 import { Kinetic3DShowcase } from "@/components/kinetic/Kinetic3DShowcase";
 import { SWEETS_DATA } from "@/data/yazd-content";
@@ -52,7 +53,16 @@ export function SweetDetailModal({ sweetId, onClose, onNavigate }: SweetDetailMo
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, index, onClose, onNavigate]);
 
-  return (
+  // rendered into <body>: the studio section uses content-visibility on phones, and a fixed
+  // overlay inside a contained section would be positioned/clipped by that section
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {sweet && (
         <motion.div
@@ -81,7 +91,7 @@ export function SweetDetailModal({ sweetId, onClose, onNavigate }: SweetDetailMo
             transition={SPRING}
             className="relative max-h-[92dvh] w-full max-w-5xl overflow-y-auto overscroll-contain rounded-[2rem] border border-ink/10 bg-card shadow-lift"
           >
-            <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-ink/[0.06] bg-card/90 px-5 py-3 backdrop-blur-md md:px-7">
+            <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-ink/[0.06] bg-card/95 px-5 py-3 md:bg-card/90 md:px-7 md:backdrop-blur-md">
               <span className="text-[13px] font-bold text-umber">{sweet.order} / ۰۶ · نمای کامل</span>
               <div className="flex items-center gap-1.5">
                 <motion.button
@@ -143,7 +153,7 @@ export function SweetDetailModal({ sweetId, onClose, onNavigate }: SweetDetailMo
                       alt={sweet.imageAlt}
                       aspectRatio="h-full"
                       eager
-                      sizes="(max-width: 768px) 92vw, 40vw"
+                      sizes="(max-width: 640px) 256px, 40vw"
                     />
                   </Kinetic3DShowcase>
                 </div>
@@ -153,6 +163,7 @@ export function SweetDetailModal({ sweetId, onClose, onNavigate }: SweetDetailMo
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/download-images.mjs",
+    "predev": "node scripts/download-images.mjs && node scripts/build-image-variants.mjs",
     "dev": "next dev",
     "download-images": "node scripts/download-images.mjs",
     "download-images:force": "node scripts/download-images.mjs --force",
-    "prebuild": "node scripts/download-images.mjs",
+    "prebuild": "node scripts/download-images.mjs && node scripts/build-image-variants.mjs",
     "build": "next build",
     "start": "next start",
     "export": "node scripts/export-static.mjs",
@@ -15,7 +15,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "audit": "node scripts/audit-site.mjs",
-    "audit:install": "playwright install chromium"
+    "audit:install": "playwright install chromium",
+    "image-variants": "node scripts/build-image-variants.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

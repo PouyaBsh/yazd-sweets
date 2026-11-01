@@ -62,8 +62,8 @@ export function SelectorRail({ className }: { className?: string }) {
     <div
       data-audit-overlay
       className={cn(
-        "sticky top-14 z-30 -mx-4 border-b border-ink/[0.06] bg-canvas/90 px-4 py-2 backdrop-blur-md md:-mx-8 md:px-8",
-        "lg:top-28 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
+        "sticky top-14 z-30 -mx-4 border-b border-ink/[0.06] bg-canvas/95 px-4 py-2 md:-mx-8 md:px-8",
+        "lg:top-28 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:p-0",
         className,
       )}
     >
@@ -102,7 +102,7 @@ export function SelectorRail({ className }: { className?: string }) {
               )}
               <span className="relative hidden w-6 text-center text-xs font-black text-ink lg:block">{sweet.order}</span>
               <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full lg:h-14 lg:w-14 lg:rounded-xl">
-                <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-square" hoverZoom="self" sizes="56px" />
+                <AdaptiveImage src={sweet.image} alt="" aspectRatio="aspect-square" hoverZoom="self" sizes="42px" />
               </span>
               <span className="relative min-w-0 lg:flex-1 lg:pe-1">
                 <span className="block text-sm font-extrabold whitespace-nowrap text-ink lg:text-[15px]">{sweet.name}</span>

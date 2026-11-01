@@ -37,8 +37,9 @@ export function CoffeeSection() {
     <div className="mx-auto max-w-[1440px]">
       <section
         id="yazdi-coffee"
+        data-anim-scope
         aria-labelledby="coffee-title"
-        className="relative isolate mx-4 my-8 scroll-mt-20 overflow-hidden rounded-[2rem] bg-[#1A1412] p-5 text-[#F5EFE6] sm:p-8 md:mx-8 md:my-12 md:scroll-mt-24 md:p-14"
+        className="cv-auto relative isolate mx-4 my-8 scroll-mt-20 overflow-hidden rounded-[2rem] bg-[#1A1412] p-5 text-[#F5EFE6] sm:p-8 md:mx-8 md:my-12 md:scroll-mt-24 md:p-14"
       >
         {/* atmosphere: dark girih lattice, glowing copper-gold shamseh, desert light, drifting spice */}
         <DesertSaffronAmbient tone="dark" motifs={false} className="z-0" />

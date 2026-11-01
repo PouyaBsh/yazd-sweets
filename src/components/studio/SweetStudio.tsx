@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimationFrame, useInView, useMotionValue } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { useExperience } from "@/components/experience/ExperienceContext";
 import { DesertSaffronAmbient, GirihPatternCanvas } from "@/components/ornaments";
@@ -27,9 +27,8 @@ export function SweetStudio() {
   // (The old `amount: 0.35` of the whole section could never be met on phones, where the
   //  section is ~3 screens tall — one reason the tour looked stuck.)
   const stageInView = useInView(stageRef, { margin: "-25% 0px -25% 0px" });
-  const tourProgress = useMotionValue(0);
-  const tourElapsed = useRef(0);
-  const lastSeenId = useRef(selectedSweetId);
+  // bumping this restarts the ring (and so the step) — e.g. a manual pick of the sweet already showing
+  const [tourCycle, setTourCycle] = useState(0);
 
   const openDetail = useCallback(
     (id: string) => {
@@ -40,10 +39,7 @@ export function SweetStudio() {
   );
   const closeDetail = useCallback(() => setDetailId(null), []);
 
-  const resetTour = useCallback(() => {
-    tourElapsed.current = 0;
-    tourProgress.set(0);
-  }, [tourProgress]);
+  const resetTour = useCallback(() => setTourCycle((c) => c + 1), []);
 
   // The tour only pauses while a finger / mouse button is actually down inside the studio
   // (so a sweet never changes mid-drag) — no long "hold" after interactions any more.
@@ -69,31 +65,18 @@ export function SweetStudio() {
 
   const touring = tourOn && !pressed && stageInView && viewMode === "studio" && detailId === null;
 
-  // Frame clock (same engine as the hero story bars): time only accumulates while touring,
-  // so pausing never loses or skips a step; reaching TOUR_MS always advances (wrapping 6 → 1).
-  useAnimationFrame((_, delta) => {
-    if (lastSeenId.current !== selectedSweetId) {
-      // any selection change — manual (rail, arrows, swipe, keys, hero/gallery) or automatic —
-      // starts a fresh, full-length step
-      lastSeenId.current = selectedSweetId;
-      resetTour();
-    }
-    if (!touring) return;
-    tourElapsed.current += Math.min(delta, 64);
-    tourProgress.set(Math.min(1, tourElapsed.current / TOUR_MS));
-    if (tourElapsed.current >= TOUR_MS) {
-      resetTour();
-      stepSweet(1);
-    }
-  });
+  // The ring in the toggle is the clock (a compositor animation): it restarts whenever the selected
+  // sweet changes for any reason (its cycleKey contains the id), pauses with `touring`, and when it
+  // closes the next sweet comes up (wrapping 6 → 1).
 
   return (
     <section
       id="sweet-studio"
+      data-anim-scope
       aria-labelledby="studio-title"
       onPointerDownCapture={onPointerDownCapture}
       onClickCapture={onClickCapture}
-      className="relative isolate mx-auto max-w-[1320px] scroll-mt-14 px-4 pt-10 pb-10 md:scroll-mt-24 md:px-8 md:pt-14 md:pb-12"
+      className="cv-auto relative isolate mx-auto max-w-[1320px] scroll-mt-14 px-4 pt-10 pb-10 md:scroll-mt-24 md:px-8 md:pt-14 md:pb-12"
     >
       <DesertSaffronAmbient motifs={false} className="-inset-x-24" />
       <GirihPatternCanvas className="-z-10" />
@@ -110,7 +93,9 @@ export function SweetStudio() {
           <AutoTourToggle
             on={tourOn}
             running={touring}
-            progress={tourProgress}
+            cycleKey={`${selectedSweetId}-${tourCycle}`}
+            durationMs={TOUR_MS}
+            onStep={() => stepSweet(1)}
             onToggle={() => {
               resetTour();
               setTourOn((v) => !v);

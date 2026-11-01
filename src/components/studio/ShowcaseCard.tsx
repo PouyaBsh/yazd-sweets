@@ -47,7 +47,7 @@ function ImageStage({ sweet }: { sweet: SweetItem }) {
         className="relative z-10 cursor-grab touch-pan-y"
       >
         <Kinetic3DShowcase kineticId="showcase" className="aspect-[4/3] w-full md:aspect-[4/5]" rounded="rounded-[1.6rem]">
-          <AdaptiveImage src={sweet.image} alt={sweet.imageAlt} aspectRatio="h-full" hoverZoom="self" eager sizes="(max-width: 768px) 92vw, 34vw" />
+          <AdaptiveImage src={sweet.image} alt={sweet.imageAlt} aspectRatio="h-full" hoverZoom="self" eager sizes="(max-width: 640px) 256px, 34vw" />
           <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[1.6rem] ring-1 ring-ink/10 ring-inset" />
           <motion.span
             className="absolute top-3 right-3 z-20 sm:top-4 sm:right-4"
@@ -143,8 +143,10 @@ export function ShowcaseCard({ sweet, direction }: { sweet: SweetItem; direction
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -left-32 h-72 w-72 rounded-full blur-3xl"
-        style={{ backgroundColor: hexToRgba(sweet.accentColor, 0.14) }}
+        className="pointer-events-none absolute -top-48 -left-48 h-[26rem] w-[26rem]"
+        style={{
+          background: `radial-gradient(closest-side, ${hexToRgba(sweet.accentColor, 0.14)} 0%, ${hexToRgba(sweet.accentColor, 0.14)} 40%, ${hexToRgba(sweet.accentColor, 0.06)} 65%, transparent 100%)`,
+        }}
       />
       <div className="relative">
         <ShowcaseBody sweet={sweet} />
