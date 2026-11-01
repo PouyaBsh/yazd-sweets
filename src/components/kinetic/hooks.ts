@@ -47,13 +47,24 @@ function createShared(): ScrollSignals {
   let raf = 0;
   let prev = 0;
 
+  const STEP = 1 / 240; // fixed physics step — stable at any frame rate
   const tick = (now: number) => {
-    const dt = Math.min(0.064, (now - (prev || now)) / 1000) || 1 / 60;
+    const dt = Math.min(0.1, (now - (prev || now)) / 1000) || 1 / 60;
     prev = now;
     if (now - lastEvent > 80) target = 0; // finger lifted / wheel stopped
-    const a = (-K * (v - target) - C * dv) / M;
-    dv += a * dt;
-    v += dv * dt;
+    // Integrate in small fixed sub-steps. (A single Euler step per frame becomes unstable once a
+    // frame takes more than ~37 ms — exactly what happens on mid-range phones — and the drift then
+    // flipped between +5 px and −5 px every frame: the "cards jitter / get stuck" bug.)
+    for (let t = 0; t < dt; t += STEP) {
+      const h = Math.min(STEP, dt - t);
+      const a = (-K * (v - target) - C * dv) / M;
+      dv += a * h;
+      v += dv * h;
+    }
+    if (!Number.isFinite(v) || !Number.isFinite(dv)) {
+      v = 0;
+      dv = 0;
+    }
     velocity.set(v);
     boost.set(Math.min(1, Math.abs(v) / 2400));
     if (target === 0 && Math.abs(v) < 0.5 && Math.abs(dv) < 5) {
@@ -74,7 +85,7 @@ function createShared(): ScrollSignals {
       const now = performance.now();
       const y = window.scrollY;
       const dt = Math.max(8, now - lastT);
-      target = ((y - lastY) / dt) * 1000;
+      target = Math.max(-6000, Math.min(6000, ((y - lastY) / dt) * 1000));
       lastY = y;
       lastT = now;
       lastEvent = now;

@@ -54,11 +54,11 @@ export function CoffeeSection() {
             <SectionHeading index="۰۳" eyebrow="آیین قهوه یزدی" title={data.title} id="coffee-title" tone="dark" />
 
             <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={SPRING} className="mt-5 md:mt-6">
-              <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#F5EFE6]/15 bg-firuzeh py-1.5 ps-1.5 pe-4 text-xs font-bold text-[#F5EFE6] sm:text-[13px]">
+              <span className="inline-flex max-w-full items-center gap-2.5 rounded-full border border-[#F5EFE6]/15 bg-firuzeh py-2 ps-2 pe-5 text-xs font-bold text-[#F5EFE6] sm:gap-3 sm:pe-8 sm:text-[13px]">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F5EFE6]/15">
                   <Award className="h-3.5 w-3.5" />
                 </span>
-                <span className="min-w-0">{data.heritageBadge}</span>
+                <span className="min-w-0 text-balance">{data.heritageBadge}</span>
               </span>
             </motion.div>
 
@@ -147,7 +147,7 @@ export function CoffeeSection() {
                 external
                 sheen
                 ariaLabel={`${data.externalLink.label} (در پنجره جدید باز می‌شود)`}
-                className="min-h-[52px] w-full rounded-full bg-saffron px-6 py-3.5 text-[15px] font-extrabold text-[#1A1412] shadow-glow sm:w-auto"
+                className="min-h-[52px] w-full rounded-full bg-saffron px-6 py-3.5 text-[13px] font-extrabold text-[#1A1412] shadow-glow sm:w-auto sm:text-sm"
               >
                 <span className="text-center">{data.externalLink.label}</span>
                 <ExternalLink className="h-4 w-4 shrink-0" strokeWidth={2} />
